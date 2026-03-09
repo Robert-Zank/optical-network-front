@@ -1,26 +1,51 @@
-import { GeoFeatures } from '../utils/geoUtils';
+import { calculateGeoFeatures } from "../utils/geoUtils";
+import type { Node, GeoFeatures } from "../utils/geoUtils";
 
-// The response is now a simple boolean and a message
 export interface PredictionResponse {
-  is_good: boolean;
-  message: string;
+  result: [number, number, number, number]; // gamma, delta, lambda, xi
 }
 
-// Function to call the backend model API with the geographic features
-export async function runModel(features: GeoFeatures): Promise<PredictionResponse> {
-  const response = await fetch("http://localhost:8000/predict", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      node_count: features.nodeCount,
-      convex_area: features.convexArea,
-      perimeter: features.perimeter
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Network analysis failed");
+export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
+  // 1. Guard against empty nodes before even trying the fetch
+  if (nodes.length === 0) {
+    throw new Error("No nodes selected on the map.");
   }
 
-  return await response.json();
+  const features: GeoFeatures = calculateGeoFeatures(nodes);
+
+  try {
+    
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json" 
+      },
+      body: JSON.stringify({
+        num_nodes: features.numNodes,
+        num_center_nodes: features.numCenterNodes,
+        centrality_ratio: features.centralityRatio,
+        num_periphery_nodes: features.numPeripheryNodes,
+        convex_area: features.convexArea,
+        sqrt_convex_area: features.sqrtConvexArea,
+        t_ratio: features.tRatio,
+        perimeter_sqrtarea_ratio: features.perimeterSqrtAreaRatio,
+        perimeter: features.perimeter,
+      }),
+    });
+
+    // 3. Handle specific HTTP errors (like 422 Validation Error)
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      console.error("Backend Error Detail:", errorBody);
+      throw new Error(`Server Error: ${response.status}`);
+    }
+
+    return await response.json();
+    
+  } catch (error) {
+    // This catches "Failed to fetch" (network down, CORS, etc.)
+    console.error("Connection Refused. Ensure FastAPI is running on port 8000.");
+    throw error; 
+  }
 }
