@@ -17,7 +17,7 @@ import L from "leaflet";
 // Import the runModel function that handles feature calculation + backend call
 import { runModel } from "../api/modelApi_calls";
 
-// Fix for Leaflet invisible marker issue
+// Fix for Leaflet invisible marker issue by just using icon URLs directly from the package
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 

@@ -15,6 +15,7 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
 
   try {
     
+    // make the POST request to the FastAPI backend
     const response = await fetch("http://127.0.0.1:8000/predict", {
       method: "POST",
       headers: { 
@@ -44,7 +45,7 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
     return await response.json();
     
   } catch (error) {
-    // This catches "Failed to fetch" (network down, CORS, etc.)
+    // This catches "Failed to fetch" (the server never got to start)
     console.error("Connection Refused. Ensure FastAPI is running on port 8000.");
     throw error; 
   }
