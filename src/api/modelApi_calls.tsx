@@ -32,6 +32,19 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
         t_ratio: features.tRatio,
         perimeter_sqrtarea_ratio: features.perimeterSqrtAreaRatio,
         perimeter: features.perimeter,
+        edge_Density_km_per_km2: 0,
+        MST_Length_km : 0,
+        MST_CV: 0, // Placeholder, compute if needed
+        Meannndist_Km: 0, // Placeholder, compute if needed
+        Centroid_CV: 0, // Placeholder, compute if needed
+        Shape_Factor: 0, // Placeholder, compute if needed
+        node_density_nodes_per_km2: 0,
+        avg_unweighted_path : 0,
+        deg_cv : 0,
+        avg_clustering_coeff : 0,
+        graph_diameter : 0,
+        convex_area_bin : 0,
+        perimeter_bin : 0,
       }),
     });
 
