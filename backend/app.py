@@ -8,6 +8,11 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import sys
 import __main__
 
+# Need to Install fastapi, pandas, joblib, scikit-learn, uvicorn
+# Run with: uvicorn app:app --reload
+# Make sure to run with python version 3.12 because of sckit-learn compatibility with the model
+
+
 
 # --- THE REAL FIX ---
 # We define the EXACT class used in your notebook

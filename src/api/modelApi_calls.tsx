@@ -32,8 +32,8 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
         t_ratio: features.tRatio,
         perimeter_sqrtarea_ratio: features.perimeterSqrtAreaRatio,
         perimeter: features.perimeter,
-        edge_Density_km_per_km2: 0,
-        MST_Length_km : 0,
+        edge_Density_km_per_km2: features.convexArea > 0 ? features.mstTotalLength / features.convexArea : 0,
+        MST_Length_km : features.mstTotalLength,
         MST_CV: 0, // Placeholder, compute if needed
         Meannndist_Km: 0, // Placeholder, compute if needed
         Centroid_CV: 0, // Placeholder, compute if needed
