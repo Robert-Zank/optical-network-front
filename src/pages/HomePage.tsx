@@ -5,17 +5,27 @@ export default function HomePage() {
     <div className="row g-4">
       <div className="col-12">
         <div className="p-4 p-md-5 bg-white border rounded-3 shadow-sm">
-          <h1 className="h3 fw-bold mb-2">Estimate optical networks fast.</h1>
-          <p className="text-muted mb-4" style={{ maxWidth: 720 }}>
-            Upload node locations, construct a graph, and generate predicted Johnson SB parameters plus a rough cost
-            estimate based on shortest-path behavior.
+          <div className="text-uppercase small text-muted fw-semibold mb-2">
+            Optical Network Parameter Prediction
+          </div>
+
+          <h1 className="h3 fw-bold mb-2">
+            Predict optical network behavior from topology input.
+          </h1>
+
+          <p className="text-muted mb-4" style={{ maxWidth: 760 }}>
+            This tool uses machine learning and geometric network features to estimate
+            Johnson SB distribution parameters from node locations. Upload a CSV of
+            network nodes, preview the topology on a map, run inference, and review
+            predicted parameters alongside an early-stage cost estimate.
           </p>
+
           <div className="d-flex flex-wrap gap-2">
             <Link to="/estimate" className="btn btn-dark">
-              Start estimate
+              Open estimator
             </Link>
             <button className="btn btn-outline-secondary" type="button" disabled>
-              Use sample data (soon)
+              Sample workflow coming soon
             </button>
           </div>
         </div>
@@ -23,20 +33,40 @@ export default function HomePage() {
 
       <div className="col-12 col-md-4">
         <div className="bg-white border rounded-3 p-3 shadow-sm h-100">
-          <div className="fw-semibold">Topology input</div>
-          <div className="text-muted small mt-1">CSV upload and validation.</div>
+          <div className="fw-semibold">1. Upload topology</div>
+          <div className="text-muted small mt-1">
+            Import node coordinates from CSV and prepare them for model input.
+          </div>
         </div>
       </div>
+
       <div className="col-12 col-md-4">
         <div className="bg-white border rounded-3 p-3 shadow-sm h-100">
-          <div className="fw-semibold">Model inference</div>
-          <div className="text-muted small mt-1">Predict Johnson SB parameters.</div>
+          <div className="fw-semibold">2. Run prediction</div>
+          <div className="text-muted small mt-1">
+            Generate Johnson SB parameters from geometric and topology-based features.
+          </div>
         </div>
       </div>
+
       <div className="col-12 col-md-4">
         <div className="bg-white border rounded-3 p-3 shadow-sm h-100">
-          <div className="fw-semibold">Export</div>
-          <div className="text-muted small mt-1">Download JSON/CSV (later).</div>
+          <div className="fw-semibold">3. Review results</div>
+          <div className="text-muted small mt-1">
+            Inspect predicted parameters, map the uploaded nodes, and view a rough cost estimate.
+          </div>
+        </div>
+      </div>
+
+      <div className="col-12">
+        <div className="bg-white border rounded-3 p-4 shadow-sm">
+          <div className="fw-semibold mb-2">What this project does</div>
+          <div className="text-muted small" style={{ maxWidth: 900 }}>
+            The goal of this project is to support early-stage optical network analysis
+            by connecting network topology to predicted shortest-path distribution behavior.
+            Instead of requiring a fully built graph and detailed simulation workflow up front,
+            this estimator provides a faster way to move from node placement to useful model outputs.
+          </div>
         </div>
       </div>
     </div>
