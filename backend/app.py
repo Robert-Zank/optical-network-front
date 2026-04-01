@@ -127,15 +127,15 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     # force totals to add up cleanly
     n_bpsk = total_paths - n_16qam - n_8qam - n_qpsk
 
-    # Example cost assumptions — replace with your real numbers
+    # Example cost assumptions (replaceable)
     transponder_costs = {
-        "16QAM": 8000,
-        "8QAM": 12000,
-        "QPSK": 18000,
-        "BPSK": 25000,
+        "16QAM": 12500,  # proxy for higher-capacity coherent hardware
+        "8QAM": 7500,    # proxy for mid-tier coherent hardware
+        "QPSK": 4000,    # proxy for 100G-class coherent pluggable
+        "BPSK": 15000,   # conservative placeholder for specialized long-reach equipment
     }
 
-    # Example amplifier/booster assumptions
+    # 80 km pulled from "Nokia’s optical and IP foundation for research and education networks"
     # assume one booster roughly every 80 km after the first span
     def boosters_needed(path_length_km):
         if path_length_km <= 80:
