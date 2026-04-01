@@ -28,6 +28,27 @@ export interface PredictionResponse {
       boosters: number;
       total: number;
     };
+    assumptions: {
+      path_ranges_km: {
+        "16QAM": [number, number];
+        "8QAM": [number, number];
+        "QPSK": [number, number];
+        "BPSK": [number, number];
+      };
+      boosters_per_bucket: {
+        "16QAM": number;
+        "8QAM": number;
+        "QPSK": number;
+        "BPSK": number;
+      };
+      booster_cost: number;
+      transponder_costs: {
+        "16QAM": number;
+        "8QAM": number;
+        "QPSK": number;
+        "BPSK": number;
+      };
+    };
   };
 }
 

@@ -13,6 +13,7 @@ export default function EstimatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
+  const [showAssumptions, setShowAssumptions] = useState(false);
 
   const sampleNodes: Node[] = useMemo(
     () => [
@@ -34,6 +35,7 @@ export default function EstimatePage() {
     setNodes([]);
     setError(null);
     setPrediction(null);
+    setShowAssumptions(false);
   };
 
   const handleGenerateEstimate = async () => {
@@ -61,84 +63,130 @@ export default function EstimatePage() {
   };
 
   return (
-    <div className="row g-4">
-      <div className="col-12">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2">
-          <div>
-            <h1 className="h4 fw-bold mb-1">Estimator</h1>
-            <div className="text-muted">
-              Input topology → run inference → view results.
+    <>
+      <div className="row g-4">
+        <div className="col-12">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2">
+            <div>
+              <h1 className="h4 fw-bold mb-1">Estimator</h1>
+              <div className="text-muted">
+                Input topology → run inference → view results.
+              </div>
+            </div>
+
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                onClick={handleReset}
+              >
+                Reset
+              </button>
+
+              <button
+                className="btn btn-dark btn-sm"
+                type="button"
+                onClick={handleLoadSample}
+              >
+                Load sample
+              </button>
             </div>
           </div>
+        </div>
 
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              type="button"
-              onClick={handleReset}
-            >
-              Reset
-            </button>
+        <div className="col-12 col-lg-5">
+          <TopologyUpload nodes={nodes} setNodes={setNodes} />
+
+          <div className="bg-white border rounded-3 p-3 shadow-sm">
+            <div className="fw-semibold">2. Run</div>
 
             <button
-              className="btn btn-dark btn-sm"
+              className="btn btn-dark w-100 mt-3"
               type="button"
-              onClick={handleLoadSample}
+              onClick={handleGenerateEstimate}
+              disabled={loading || nodes.length === 0}
             >
-              Load sample
+              {loading ? "Generating..." : "Generate estimate"}
             </button>
+
+            <div className="text-muted small mt-2">
+              Upload a CSV or load sample nodes, then run the model.
+            </div>
+
+            {error && <div className="text-danger small mt-2">{error}</div>}
+          </div>
+        </div>
+
+        <div className="col-12 col-lg-7">
+          <div className="bg-white border rounded-3 p-3 shadow-sm mb-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div className="fw-semibold">Results</div>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                onClick={() => setShowAssumptions(true)}
+              >
+                View Assumptions
+              </button>
+            </div>
+
+            <div className="text-muted small mt-1">
+              Predicted parameters and equipment cost summary will appear here.
+            </div>
+
+            <ResultsSummaryCards prediction={prediction} />
+            <JohnsonSBTable params={prediction?.result ?? null} />
+            <CostBreakdownTable costEstimate={prediction?.cost_estimate ?? null} />
+          </div>
+
+          <div className="bg-white border rounded-3 p-3 shadow-sm">
+            <div className="fw-semibold">Topology Preview</div>
+            <div className="text-muted small mt-1">
+              Uploaded node locations will appear here.
+            </div>
+
+            <div className="mt-3">
+              <TopologyMapPreview nodes={nodes} />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="col-12 col-lg-5">
-        <TopologyUpload nodes={nodes} setNodes={setNodes} />
-
-        <div className="bg-white border rounded-3 p-3 shadow-sm">
-          <div className="fw-semibold">2. Run</div>
-
-          <button
-            className="btn btn-dark w-100 mt-3"
-            type="button"
-            onClick={handleGenerateEstimate}
-            disabled={loading || nodes.length === 0}
+      {showAssumptions && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            zIndex: 1050,
+          }}
+          onClick={() => setShowAssumptions(false)}
+        >
+          <div
+            className="bg-white rounded-3 shadow p-3"
+            style={{
+              width: "min(700px, 92vw)",
+              maxHeight: "85vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {loading ? "Generating..." : "Generate estimate"}
-          </button>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <div className="fw-semibold">Current Assumptions</div>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                onClick={() => setShowAssumptions(false)}
+              >
+                Close
+              </button>
+            </div>
 
-          <div className="text-muted small mt-2">
-            Upload a CSV or load sample nodes, then run the model.
-          </div>
-
-          {error && <div className="text-danger small mt-2">{error}</div>}
-        </div>
-      </div>
-
-      <div className="col-12 col-lg-7">
-        <div className="bg-white border rounded-3 p-3 shadow-sm mb-3">
-          <div className="fw-semibold">Results</div>
-          <div className="text-muted small mt-1">
-            Predicted parameters and equipment cost summary will appear here.
-          </div>
-
-          <ResultsSummaryCards prediction={prediction} />
-          <JohnsonSBTable params={prediction?.result ?? null} />
-          <CostBreakdownTable costEstimate={prediction?.cost_estimate ?? null} />
-        </div>
-
-        <AssumptionsCard />
-
-        <div className="bg-white border rounded-3 p-3 shadow-sm">
-          <div className="fw-semibold">Topology Preview</div>
-          <div className="text-muted small mt-1">
-            Uploaded node locations will appear here.
-          </div>
-
-          <div className="mt-3">
-            <TopologyMapPreview nodes={nodes} />
+            <AssumptionsCard
+              assumptions={prediction?.cost_estimate.assumptions ?? null}
+            />
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
