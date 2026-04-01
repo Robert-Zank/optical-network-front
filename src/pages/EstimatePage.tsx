@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { runModel } from "../api/modelApi_calls";
+import { runModel, type PredictionResponse } from "../api/modelApi_calls";
 import type { Node } from "../utils/geoUtils";
 import TopologyUpload from "../components/TopologyUpload";
 import TopologyMapPreview from "../components/TopologyMapPreview";
@@ -12,6 +12,8 @@ export default function EstimatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useState<[number, number, number, number] | null>(null);
+
+  const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
 
   const sampleNodes: Node[] = useMemo(
     () => [
@@ -43,6 +45,7 @@ export default function EstimatePage() {
 
     try {
       const response = await runModel(nodes);
+      setPrediction(response);
       setParams(response.result);
     } catch (err) {
       const message =
@@ -142,13 +145,11 @@ export default function EstimatePage() {
             <div className="col-12 col-md-4">
               <div className="border rounded-3 p-3">
                 <div className="text-muted small">Estimated Cost</div>
-                <div className="fw-bold">{estimatedCost}</div>
-              </div>
-            </div>
-            <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3">
-                <div className="text-muted small">Fiber Length</div>
-                <div className="fw-bold">—</div>
+                <div className="fw-bold">
+                  {prediction
+                    ? `$${prediction.cost_estimate.costs.total.toLocaleString()}`
+                    : "—"}
+                </div>
               </div>
             </div>
             <div className="col-12 col-md-4">

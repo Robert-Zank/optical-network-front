@@ -5,6 +5,8 @@ import joblib
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 from sklearn.base import BaseEstimator, TransformerMixin
+from scipy.stats import johnsonsb
+from math import comb, ceil
 import sys
 import __main__
 
@@ -13,9 +15,6 @@ import __main__
 # Make sure to run with python version 3.12 because of sckit-learn compatibility with the model
 
 
-
-# --- THE REAL FIX ---
-# We define the EXACT class used in your notebook
 class DropCorrelatedFeatures(BaseEstimator, TransformerMixin):
     def __init__(self, threshold=0.95):
         self.threshold = threshold
@@ -108,9 +107,92 @@ try:
 except Exception as e:
     print(f"❌ Error loading model: {e}")
 
+def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
+    # Johnson SB distribution
+    dist = johnsonsb(a=gamma, b=delta, loc=xi, scale=lam)
+
+    # Distance buckets (km)
+    p_16qam = max(0.0, dist.cdf(375) - dist.cdf(0))
+    p_8qam  = max(0.0, dist.cdf(750) - dist.cdf(375))
+    p_qpsk  = max(0.0, dist.cdf(1500) - dist.cdf(750))
+    p_bpsk  = max(0.0, dist.cdf(lam + xi) - dist.cdf(1500))
+
+    # Total unordered node-pair paths
+    total_paths = comb(num_nodes, 2)
+
+    n_16qam = round(total_paths * p_16qam)
+    n_8qam  = round(total_paths * p_8qam)
+    n_qpsk  = round(total_paths * p_qpsk)
+
+    # force totals to add up cleanly
+    n_bpsk = total_paths - n_16qam - n_8qam - n_qpsk
+
+    # Example cost assumptions — replace with your real numbers
+    transponder_costs = {
+        "16QAM": 8000,
+        "8QAM": 12000,
+        "QPSK": 18000,
+        "BPSK": 25000,
+    }
+
+    # Example amplifier/booster assumptions
+    # assume one booster roughly every 80 km after the first span
+    def boosters_needed(path_length_km):
+        if path_length_km <= 80:
+            return 0
+        return max(0, ceil(path_length_km / 80) - 1)
+
+    booster_cost = 3000
+
+    # Representative path lengths for each bucket
+    representative_lengths = {
+        "16QAM": 187.5,
+        "8QAM": 562.5,
+        "QPSK": 1125.0,
+        "BPSK": max(1500.0, (lam + xi + 1500) / 2),
+    }
+
+    counts = {
+        "16QAM": n_16qam,
+        "8QAM": n_8qam,
+        "QPSK": n_qpsk,
+        "BPSK": n_bpsk,
+    }
+
+    transponder_total = 0
+    booster_total = 0
+    booster_counts = {}
+
+    for mod, count in counts.items():
+        length = representative_lengths[mod]
+        boosters_per_path = boosters_needed(length)
+        booster_counts[mod] = count * boosters_per_path
+
+        # if each path needs two endpoints, multiply transponder cost by 2
+        transponder_total += count * 2 * transponder_costs[mod]
+        booster_total += booster_counts[mod] * booster_cost
+
+    total_cost = transponder_total + booster_total
+
+    return {
+        "total_paths": total_paths,
+        "probabilities": {
+            "16QAM": p_16qam,
+            "8QAM": p_8qam,
+            "QPSK": p_qpsk,
+            "BPSK": p_bpsk,
+        },
+        "path_counts": counts,
+        "booster_counts": booster_counts,
+        "costs": {
+            "transponders": transponder_total,
+            "boosters": booster_total,
+            "total": total_cost,
+        },
+    }
+
 @app.post("/predict")
 def predict(req: PredictRequest):
-    # Convert incoming JSON data to a 2D Numpy array for the model
     data = {
         "Num_Nodes": [req.num_nodes],
         "Num_Center_Nodes": [req.num_center_nodes],
@@ -136,11 +218,21 @@ def predict(req: PredictRequest):
         "Perimeter_Bin": [req.perimeter_bin]
     }
 
-    # 3. Convert to a DataFrame (the "Named" format)
     features_df = pd.DataFrame(data)
-
-    # 4. Predict using the DataFrame instead of a NumPy array
     prediction = model.predict(features_df)
-
     result = prediction.flatten().tolist()
-    return {"result": result}
+
+    gamma, delta, lam, xi = result
+
+    cost_estimate = estimate_network_cost(
+        num_nodes=req.num_nodes,
+        gamma=gamma,
+        delta=delta,
+        lam=lam,
+        xi=xi,
+    )
+
+    return {
+        "result": result,
+        "cost_estimate": cost_estimate,
+    }

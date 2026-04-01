@@ -2,7 +2,33 @@ import { calculateGeoFeatures } from "../utils/geoUtils";
 import type { Node, GeoFeatures } from "../utils/geoUtils";
 
 export interface PredictionResponse {
-  result: [number, number, number, number]; // gamma, delta, lambda, xi
+  result: [number, number, number, number];
+  cost_estimate: {
+    total_paths: number;
+    probabilities: {
+      "16QAM": number;
+      "8QAM": number;
+      "QPSK": number;
+      "BPSK": number;
+    };
+    path_counts: {
+      "16QAM": number;
+      "8QAM": number;
+      "QPSK": number;
+      "BPSK": number;
+    };
+    booster_counts: {
+      "16QAM": number;
+      "8QAM": number;
+      "QPSK": number;
+      "BPSK": number;
+    };
+    costs: {
+      transponders: number;
+      boosters: number;
+      total: number;
+    };
+  };
 }
 
 export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
