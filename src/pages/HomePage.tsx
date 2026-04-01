@@ -69,6 +69,30 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <div className="col-12">
+        <div className="bg-white border rounded-3 p-4 shadow-sm">
+          <div className="fw-semibold mb-2">How the cost estimate works</div>
+          <p className="text-muted small mb-3" style={{ maxWidth: 900 }}>
+            The estimator does not assign cost directly from the uploaded node coordinates. First,
+            the topology is converted into geometric features and passed into the machine learning
+            model. The model predicts four Johnson SB distribution parameters that describe the
+            expected shortest-path length behavior of the network.
+          </p>
+          <p className="text-muted small mb-3" style={{ maxWidth: 900 }}>
+            Using the predicted distribution, the application estimates how many paths fall into
+            different distance ranges. These ranges correspond to different modulation formats,
+            such as 16QAM, 8QAM, QPSK, and BPSK. From there, the system can estimate the type of
+            transponders/receivers required and how many optical boosters may be needed along
+            longer paths.
+          </p>
+          <p className="text-muted small mb-0" style={{ maxWidth: 900 }}>
+            The final result is an early-stage equipment cost estimate based on predicted network
+            behavior, rather than a full physical construction estimate. This makes it useful for
+            comparing candidate topologies before detailed simulation or deployment planning.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
