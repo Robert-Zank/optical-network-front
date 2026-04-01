@@ -60,12 +60,35 @@ export default function HomePage() {
 
       <div className="col-12">
         <div className="bg-white border rounded-3 p-4 shadow-sm">
+          <div className="fw-semibold mb-2">Interpretation</div>
+          <div className="text-muted small" style={{ maxWidth: 900 }}>
+          These Johnson SB parameters describe the predicted shortest-path length
+          distribution of the uploaded topology. The distribution is then used to
+          estimate how many paths fall into different distance ranges, which supports
+          the equipment cost calculation.
+          </div>
+        </div>
+      </div>
+
+      <div className="col-12">
+        <div className="bg-white border rounded-3 p-4 shadow-sm">
           <div className="fw-semibold mb-2">What this project does</div>
           <div className="text-muted small" style={{ maxWidth: 900 }}>
             The goal of this project is to support early-stage optical network analysis
             by connecting network topology to predicted shortest-path distribution behavior.
             Instead of requiring a fully built graph and detailed simulation workflow up front,
             this estimator provides a faster way to move from node placement to useful model outputs.
+          </div>
+        </div>
+      </div>
+
+      <div className="col-12">
+        <div className="bg-white border rounded-3 p-4 shadow-sm">
+          <div className="fw-semibold mb-2">Current Limitations</div>
+          <div className="text-muted small" style={{ maxWidth: 900 }}>
+          <li>Some topology inputs are still approximated using geometric features only.</li>
+          <li>The cost estimate focuses on equipment, not full fiber construction.</li>
+          <li>The model is intended for early-stage comparison, not final deployment planning.</li>
           </div>
         </div>
       </div>

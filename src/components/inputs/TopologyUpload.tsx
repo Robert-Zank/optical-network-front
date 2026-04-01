@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Node } from "../utils/geoUtils";
+import type { Node } from "../../utils/geoUtils";
 
 interface TopologyUploadProps {
   nodes: Node[];
@@ -49,6 +49,36 @@ function parseCsvToNodes(csvText: string): Node[] {
     });
   }
 
+  if (parsedNodes.length < 3) {
+    throw new Error("CSV must contain at least 3 nodes.");
+  }
+
+  const ids = new Set<string>();
+  const coords = new Set<string>();
+
+  for (const node of parsedNodes) {
+    const idKey = String(node.id);
+    const coordKey = `${node.lat},${node.lng}`;
+
+    if (ids.has(idKey)) {
+      throw new Error(`Duplicate node id found: ${node.id}`);
+    }
+    ids.add(idKey);
+
+    if (coords.has(coordKey)) {
+      throw new Error(`Duplicate coordinates found for node ${node.id}`);
+    }
+    coords.add(coordKey);
+
+    if (node.lat < -90 || node.lat > 90) {
+      throw new Error(`Invalid latitude for node ${node.id}`);
+    }
+
+    if (node.lng < -180 || node.lng > 180) {
+      throw new Error(`Invalid longitude for node ${node.id}`);
+    }
+  }
+
   return parsedNodes;
 }
 
@@ -71,11 +101,6 @@ export default function TopologyUpload({
     try {
       const text = await file.text();
       const parsedNodes = parseCsvToNodes(text);
-
-      if (parsedNodes.length === 0) {
-        throw new Error("No valid nodes were found in the CSV.");
-      }
-
       setNodes(parsedNodes);
     } catch (error) {
       const message =

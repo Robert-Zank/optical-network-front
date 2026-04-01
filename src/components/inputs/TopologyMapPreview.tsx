@@ -1,7 +1,18 @@
+import L, { LatLngBounds } from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { LatLngBounds } from "leaflet";
 import { useEffect } from "react";
-import type { Node } from "../utils/geoUtils";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import type { Node } from "../../utils/geoUtils";
+
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 interface TopologyMapPreviewProps {
   nodes: Node[];
@@ -37,7 +48,7 @@ export default function TopologyMapPreview({
   const firstNode = nodes[0];
 
   return (
-    <div className="border rounded-3 overflow-hidden mt-3">
+    <div className="border rounded-3 overflow-hidden">
       <MapContainer
         center={[firstNode.lat, firstNode.lng]}
         zoom={12}

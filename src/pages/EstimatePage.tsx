@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
 import { runModel, type PredictionResponse } from "../api/modelApi_calls";
 import type { Node } from "../utils/geoUtils";
-import TopologyUpload from "../components/TopologyUpload";
-import TopologyMapPreview from "../components/TopologyMapPreview";
+import TopologyUpload from "../components/inputs/TopologyUpload";
+import TopologyMapPreview from "../components/inputs/TopologyMapPreview";
+import ResultsSummaryCards from "../components/interpretation/ResultsSummaryCards";
+import JohnsonSBTable from "../components/interpretation/JohnsonSBTable";
+import CostBreakdownTable from "../components/interpretation/CostBreakdownTable";
+import AssumptionsCard from "../components/interpretation/AssumptionsCard";
 
 export default function EstimatePage() {
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -20,10 +24,6 @@ export default function EstimatePage() {
     []
   );
 
-  const params = prediction?.result ?? null;
-  const costEstimate = prediction?.cost_estimate ?? null;
-  const estimatedCost = costEstimate?.costs.total ?? null;
-
   const handleLoadSample = () => {
     setNodes(sampleNodes);
     setError(null);
@@ -37,6 +37,11 @@ export default function EstimatePage() {
   };
 
   const handleGenerateEstimate = async () => {
+    if (nodes.length < 3) {
+      setError("At least 3 nodes are required to generate an estimate.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -48,7 +53,6 @@ export default function EstimatePage() {
         err instanceof Error
           ? err.message
           : "Something went wrong while generating the estimate.";
-
       setError(message);
       setPrediction(null);
     } finally {
@@ -114,149 +118,15 @@ export default function EstimatePage() {
         <div className="bg-white border rounded-3 p-3 shadow-sm mb-3">
           <div className="fw-semibold">Results</div>
           <div className="text-muted small mt-1">
-            Predicted parameters and cost summary will appear here.
+            Predicted parameters and equipment cost summary will appear here.
           </div>
 
-          <div className="row g-2 mt-3">
-            <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3 h-100">
-                <div className="text-muted small">Estimated Cost</div>
-                <div className="fw-bold">
-                  {estimatedCost !== null
-                    ? `$${estimatedCost.toLocaleString()}`
-                    : "—"}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3 h-100">
-                <div className="text-muted small">Total Paths</div>
-                <div className="fw-bold">
-                  {costEstimate ? costEstimate.total_paths.toLocaleString() : "—"}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3 h-100">
-                <div className="text-muted small">KSS</div>
-                <div className="fw-bold">—</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 border rounded-3 p-3">
-            <div className="fw-semibold small">Johnson SB Parameters</div>
-
-            {!params ? (
-              <div className="text-muted small mt-1">No prediction yet.</div>
-            ) : (
-              <div className="table-responsive mt-2">
-                <table className="table table-sm mb-0">
-                  <thead>
-                    <tr>
-                      <th>Parameter</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Gamma</td>
-                      <td>{params[0].toFixed(4)}</td>
-                    </tr>
-                    <tr>
-                      <td>Delta</td>
-                      <td>{params[1].toFixed(4)}</td>
-                    </tr>
-                    <tr>
-                      <td>Lambda</td>
-                      <td>{params[2].toFixed(4)}</td>
-                    </tr>
-                    <tr>
-                      <td>Xi</td>
-                      <td>{params[3].toFixed(4)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 border rounded-3 p-3">
-            <div className="fw-semibold small">Cost Breakdown</div>
-
-            {!costEstimate ? (
-              <div className="text-muted small mt-1">
-                No cost breakdown available yet.
-              </div>
-            ) : (
-              <div className="table-responsive mt-2">
-                <table className="table table-sm align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Probability</th>
-                      <th>Path Count</th>
-                      <th>Booster Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>16QAM</td>
-                      <td>{costEstimate.probabilities["16QAM"].toFixed(4)}</td>
-                      <td>{costEstimate.path_counts["16QAM"]}</td>
-                      <td>{costEstimate.booster_counts["16QAM"]}</td>
-                    </tr>
-                    <tr>
-                      <td>8QAM</td>
-                      <td>{costEstimate.probabilities["8QAM"].toFixed(4)}</td>
-                      <td>{costEstimate.path_counts["8QAM"]}</td>
-                      <td>{costEstimate.booster_counts["8QAM"]}</td>
-                    </tr>
-                    <tr>
-                      <td>QPSK</td>
-                      <td>{costEstimate.probabilities["QPSK"].toFixed(4)}</td>
-                      <td>{costEstimate.path_counts["QPSK"]}</td>
-                      <td>{costEstimate.booster_counts["QPSK"]}</td>
-                    </tr>
-                    <tr>
-                      <td>BPSK</td>
-                      <td>{costEstimate.probabilities["BPSK"].toFixed(4)}</td>
-                      <td>{costEstimate.path_counts["BPSK"]}</td>
-                      <td>{costEstimate.booster_counts["BPSK"]}</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                <div className="mt-3 pt-3 border-top">
-                  <div className="row g-2">
-                    <div className="col-12 col-md-4">
-                      <div className="small text-muted">Transponder Cost</div>
-                      <div className="fw-semibold">
-                        ${costEstimate.costs.transponders.toLocaleString()}
-                      </div>
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <div className="small text-muted">Booster Cost</div>
-                      <div className="fw-semibold">
-                        ${costEstimate.costs.boosters.toLocaleString()}
-                      </div>
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <div className="small text-muted">Total Cost</div>
-                      <div className="fw-semibold">
-                        ${costEstimate.costs.total.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ResultsSummaryCards prediction={prediction} />
+          <JohnsonSBTable params={prediction?.result ?? null} />
+          <CostBreakdownTable costEstimate={prediction?.cost_estimate ?? null} />
         </div>
+
+        <AssumptionsCard />
 
         <div className="bg-white border rounded-3 p-3 shadow-sm">
           <div className="fw-semibold">Topology Preview</div>
