@@ -6,13 +6,8 @@ import TopologyMapPreview from "../components/TopologyMapPreview";
 
 export default function EstimatePage() {
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [fiberCost, setFiberCost] = useState<number>(12000);
-  const [contingency, setContingency] = useState<number>(10);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [params, setParams] = useState<[number, number, number, number] | null>(null);
-
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
 
   const sampleNodes: Node[] = useMemo(
@@ -25,18 +20,20 @@ export default function EstimatePage() {
     []
   );
 
+  const params = prediction?.result ?? null;
+  const costEstimate = prediction?.cost_estimate ?? null;
+  const estimatedCost = costEstimate?.costs.total ?? null;
+
   const handleLoadSample = () => {
     setNodes(sampleNodes);
     setError(null);
-    setParams(null);
+    setPrediction(null);
   };
 
   const handleReset = () => {
     setNodes([]);
-    setFiberCost(12000);
-    setContingency(10);
-    setParams(null);
     setError(null);
+    setPrediction(null);
   };
 
   const handleGenerateEstimate = async () => {
@@ -46,26 +43,18 @@ export default function EstimatePage() {
     try {
       const response = await runModel(nodes);
       setPrediction(response);
-      setParams(response.result);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Something went wrong while generating the estimate.";
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while generating the estimate.";
+
       setError(message);
-      setParams(null);
+      setPrediction(null);
     } finally {
       setLoading(false);
     }
   };
-
-  const estimatedCost = useMemo(() => {
-    if (!params) return "—";
-
-    const fiberLengthKm = 0;
-    const subtotal = fiberLengthKm * fiberCost;
-    const total = subtotal * (1 + contingency / 100);
-
-    return `$${total.toLocaleString()}`;
-  }, [params, fiberCost, contingency]);
 
   return (
     <div className="row g-4">
@@ -73,13 +62,25 @@ export default function EstimatePage() {
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2">
           <div>
             <h1 className="h4 fw-bold mb-1">Estimator</h1>
-            <div className="text-muted">Input topology → run inference → view results.</div>
+            <div className="text-muted">
+              Input topology → run inference → view results.
+            </div>
           </div>
+
           <div className="d-flex gap-2">
-            <button className="btn btn-outline-secondary btn-sm" type="button" onClick={handleReset}>
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              type="button"
+              onClick={handleReset}
+            >
               Reset
             </button>
-            <button className="btn btn-dark btn-sm" type="button" onClick={handleLoadSample}>
+
+            <button
+              className="btn btn-dark btn-sm"
+              type="button"
+              onClick={handleLoadSample}
+            >
               Load sample
             </button>
           </div>
@@ -89,34 +90,9 @@ export default function EstimatePage() {
       <div className="col-12 col-lg-5">
         <TopologyUpload nodes={nodes} setNodes={setNodes} />
 
-        <div className="bg-white border rounded-3 p-3 shadow-sm mb-3">
-          <div className="fw-semibold">2. Cost Model</div>
-          <div className="row g-2 mt-1">
-            <div className="col-12">
-              <label className="form-label small mb-1">Fiber cost ($/km)</label>
-              <input
-                className="form-control"
-                type="number"
-                placeholder="e.g., 12000"
-                value={fiberCost}
-                onChange={(e) => setFiberCost(Number(e.target.value))}
-              />
-            </div>
-            <div className="col-12">
-              <label className="form-label small mb-1">Contingency (%)</label>
-              <input
-                className="form-control"
-                type="number"
-                placeholder="e.g., 10"
-                value={contingency}
-                onChange={(e) => setContingency(Number(e.target.value))}
-              />
-            </div>
-          </div>
-        </div>
-
         <div className="bg-white border rounded-3 p-3 shadow-sm">
-          <div className="fw-semibold">3. Run</div>
+          <div className="fw-semibold">2. Run</div>
+
           <button
             className="btn btn-dark w-100 mt-3"
             type="button"
@@ -138,22 +114,32 @@ export default function EstimatePage() {
         <div className="bg-white border rounded-3 p-3 shadow-sm mb-3">
           <div className="fw-semibold">Results</div>
           <div className="text-muted small mt-1">
-            Predicted parameters + cost summary will appear here.
+            Predicted parameters and cost summary will appear here.
           </div>
 
           <div className="row g-2 mt-3">
             <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3">
+              <div className="border rounded-3 p-3 h-100">
                 <div className="text-muted small">Estimated Cost</div>
                 <div className="fw-bold">
-                  {prediction
-                    ? `$${prediction.cost_estimate.costs.total.toLocaleString()}`
+                  {estimatedCost !== null
+                    ? `$${estimatedCost.toLocaleString()}`
                     : "—"}
                 </div>
               </div>
             </div>
+
             <div className="col-12 col-md-4">
-              <div className="border rounded-3 p-3">
+              <div className="border rounded-3 p-3 h-100">
+                <div className="text-muted small">Total Paths</div>
+                <div className="fw-bold">
+                  {costEstimate ? costEstimate.total_paths.toLocaleString() : "—"}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-12 col-md-4">
+              <div className="border rounded-3 p-3 h-100">
                 <div className="text-muted small">KSS</div>
                 <div className="fw-bold">—</div>
               </div>
@@ -196,6 +182,80 @@ export default function EstimatePage() {
               </div>
             )}
           </div>
+
+          <div className="mt-3 border rounded-3 p-3">
+            <div className="fw-semibold small">Cost Breakdown</div>
+
+            {!costEstimate ? (
+              <div className="text-muted small mt-1">
+                No cost breakdown available yet.
+              </div>
+            ) : (
+              <div className="table-responsive mt-2">
+                <table className="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Probability</th>
+                      <th>Path Count</th>
+                      <th>Booster Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>16QAM</td>
+                      <td>{costEstimate.probabilities["16QAM"].toFixed(4)}</td>
+                      <td>{costEstimate.path_counts["16QAM"]}</td>
+                      <td>{costEstimate.booster_counts["16QAM"]}</td>
+                    </tr>
+                    <tr>
+                      <td>8QAM</td>
+                      <td>{costEstimate.probabilities["8QAM"].toFixed(4)}</td>
+                      <td>{costEstimate.path_counts["8QAM"]}</td>
+                      <td>{costEstimate.booster_counts["8QAM"]}</td>
+                    </tr>
+                    <tr>
+                      <td>QPSK</td>
+                      <td>{costEstimate.probabilities["QPSK"].toFixed(4)}</td>
+                      <td>{costEstimate.path_counts["QPSK"]}</td>
+                      <td>{costEstimate.booster_counts["QPSK"]}</td>
+                    </tr>
+                    <tr>
+                      <td>BPSK</td>
+                      <td>{costEstimate.probabilities["BPSK"].toFixed(4)}</td>
+                      <td>{costEstimate.path_counts["BPSK"]}</td>
+                      <td>{costEstimate.booster_counts["BPSK"]}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="mt-3 pt-3 border-top">
+                  <div className="row g-2">
+                    <div className="col-12 col-md-4">
+                      <div className="small text-muted">Transponder Cost</div>
+                      <div className="fw-semibold">
+                        ${costEstimate.costs.transponders.toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-4">
+                      <div className="small text-muted">Booster Cost</div>
+                      <div className="fw-semibold">
+                        ${costEstimate.costs.boosters.toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-4">
+                      <div className="small text-muted">Total Cost</div>
+                      <div className="fw-semibold">
+                        ${costEstimate.costs.total.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border rounded-3 p-3 shadow-sm">
@@ -203,6 +263,7 @@ export default function EstimatePage() {
           <div className="text-muted small mt-1">
             Uploaded node locations will appear here.
           </div>
+
           <div className="mt-3">
             <TopologyMapPreview nodes={nodes} />
           </div>
