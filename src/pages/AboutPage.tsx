@@ -30,10 +30,19 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Node collector for map clicks
-function NodeCollector({ setNodes }: { setNodes: React.Dispatch<React.SetStateAction<{lat:number,lng:number}[]>> }) {
+function NodeCollector({
+  setNodes,
+}: {
+  setNodes: React.Dispatch<
+    React.SetStateAction<{ id: number | string; lat: number; lng: number }[]>
+  >;
+}) {
   useMapEvents({
     click(e) {
-      setNodes(prev => [...prev, { lat: e.latlng.lat, lng: e.latlng.lng }]);
+      setNodes((prev) => [
+        ...prev,
+        { id: prev.length, lat: e.latlng.lat, lng: e.latlng.lng },
+      ]);
     },
   });
   return null;
@@ -41,8 +50,12 @@ function NodeCollector({ setNodes }: { setNodes: React.Dispatch<React.SetStateAc
 
 // Main Map page
 export default function MapInput() {
-  const [nodes, setNodes] = useState<{lat:number,lng:number}[]>([]);
-  const [result, setResult] = useState<[number,number,number,number] | null>(null);
+  const [nodes, setNodes] = useState<
+    { id: number | string; lat: number; lng: number }[]
+  >([]);
+  const [result, setResult] = useState<[number, number, number, number] | null>(
+    null,
+  );
 
   // Clear nodes & result
   const handleClear = () => {
@@ -74,8 +87,19 @@ export default function MapInput() {
       <h2>Select Nodes on the Map</h2>
 
       {/* Map wrapper */}
-      <div style={{ height: 400, width: "100%", border: "2px solid #ddd", borderRadius: 12 }}>
-        <MapContainer center={[39.5, -98]} zoom={4} style={{ height: "100%", width: "100%" }}>
+      <div
+        style={{
+          height: 400,
+          width: "100%",
+          border: "2px solid #ddd",
+          borderRadius: 12,
+        }}
+      >
+        <MapContainer
+          center={[39.5, -98]}
+          zoom={4}
+          style={{ height: "100%", width: "100%" }}
+        >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <NodeCollector setNodes={setNodes} />
           {nodes.map((node, i) => (
@@ -86,10 +110,24 @@ export default function MapInput() {
 
       {/* Buttons */}
       <div style={{ marginTop: 15, display: "flex", gap: 10 }}>
-        <button onClick={handleRunModel} style={{ padding: "8px 16px", backgroundColor: "#4CAF50", color: "white" }}>
+        <button
+          onClick={handleRunModel}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#4CAF50",
+            color: "white",
+          }}
+        >
           Run Model
         </button>
-        <button onClick={handleClear} style={{ padding: "8px 16px", backgroundColor: "#ff4444", color: "white" }}>
+        <button
+          onClick={handleClear}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#ff4444",
+            color: "white",
+          }}
+        >
           Clear
         </button>
       </div>
@@ -99,14 +137,24 @@ export default function MapInput() {
         <h4>Nodes Collected: {nodes.length}</h4>
         <ul>
           {nodes.map((n, i) => (
-            <li key={i}>{n.lat.toFixed(4)}, {n.lng.toFixed(4)}</li>
+            <li key={i}>
+              {n.lat.toFixed(4)}, {n.lng.toFixed(4)}
+            </li>
           ))}
         </ul>
       </div>
 
       {/* Display model results */}
       {result && (
-        <div style={{ marginTop: 10, padding: 10, border: "1px solid #ccc", borderRadius: 6, backgroundColor: "#f0f8ff" }}>
+        <div
+          style={{
+            marginTop: 10,
+            padding: 10,
+            border: "1px solid #ccc",
+            borderRadius: 6,
+            backgroundColor: "#f0f8ff",
+          }}
+        >
           <h3>Model Output</h3>
           <p>γ: {result[0]}</p>
           <p>δ: {result[1]}</p>
