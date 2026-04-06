@@ -16,6 +16,7 @@ L.Icon.Default.mergeOptions({
 
 interface TopologyMapPreviewProps {
   nodes: Node[];
+  height?: string;
 }
 
 function FitBounds({ nodes }: { nodes: Node[] }) {
@@ -36,6 +37,7 @@ function FitBounds({ nodes }: { nodes: Node[] }) {
 
 export default function TopologyMapPreview({
   nodes,
+  height = "300px",
 }: TopologyMapPreviewProps) {
   if (nodes.length === 0) {
     return (
@@ -48,14 +50,14 @@ export default function TopologyMapPreview({
   const firstNode = nodes[0];
 
   return (
-    <div className="border rounded-3 overflow-hidden">
+    <div className="border rounded-3 overflow-hidden" style={{ height }}>
       <MapContainer
         center={[firstNode.lat, firstNode.lng]}
         zoom={12}
-        style={{ height: "300px", width: "100%" }}
+        style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 

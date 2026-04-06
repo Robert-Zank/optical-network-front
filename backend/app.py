@@ -60,7 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Input schema (Must match the keys you send from React)
+# Input schema (Must match the keys sent from React)
 class PredictRequest(BaseModel):
     num_nodes: int
     num_center_nodes: int

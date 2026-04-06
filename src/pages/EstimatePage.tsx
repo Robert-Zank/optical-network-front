@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { runModel, type PredictionResponse } from "../api/modelApi_calls";
 import type { Node } from "../utils/geoUtils";
 import TopologyUpload from "../components/inputs/TopologyUpload";
-import TopologyMapPreview from "../components/inputs/TopologyMapPreview";
 import ResultsSummaryCards from "../components/interpretation/ResultsSummaryCards";
 import JohnsonSBTable from "../components/interpretation/JohnsonSBTable";
 import CostBreakdownTable from "../components/interpretation/CostBreakdownTable";
 import AssumptionsCard from "../components/interpretation/AssumptionsCard";
+import TopologyPreviewCard from "../components/inputs/TopologyPreviewCard";
 
 export default function EstimatePage() {
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -14,6 +14,7 @@ export default function EstimatePage() {
   const [error, setError] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
   const [showAssumptions, setShowAssumptions] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const sampleNodes: Node[] = useMemo(
     () => [
@@ -36,6 +37,7 @@ export default function EstimatePage() {
     setError(null);
     setPrediction(null);
     setShowAssumptions(false);
+    setShowMap(false);
   };
 
   const handleGenerateEstimate = async () => {
@@ -139,16 +141,10 @@ export default function EstimatePage() {
             <CostBreakdownTable costEstimate={prediction?.cost_estimate ?? null} />
           </div>
 
-          <div className="bg-white border rounded-3 p-3 shadow-sm">
-            <div className="fw-semibold">Topology Preview</div>
-            <div className="text-muted small mt-1">
-              Uploaded node locations will appear here.
-            </div>
-
-            <div className="mt-3">
-              <TopologyMapPreview nodes={nodes} />
-            </div>
-          </div>
+          <TopologyPreviewCard
+            nodes={nodes}
+            onExpand={() => setShowMap(true)}
+          />
         </div>
       </div>
 
@@ -184,6 +180,45 @@ export default function EstimatePage() {
             <AssumptionsCard
               assumptions={prediction?.cost_estimate.assumptions ?? null}
             />
+          </div>
+        </div>
+      )}
+
+      {showMap && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            zIndex: 1050,
+          }}
+          onClick={() => setShowMap(false)}
+        >
+          <div
+            className="bg-white rounded-3 shadow p-3"
+            style={{
+              width: "min(1000px, 95vw)",
+              height: "85vh",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <div className="fw-semibold">Topology Map</div>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                onClick={() => setShowMap(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-2">
+              <TopologyPreviewCard
+                nodes={nodes}
+                onExpand={() => {}}
+                expandedOnly
+              />
+            </div>
           </div>
         </div>
       )}
