@@ -8,6 +8,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from scipy.stats import johnsonsb
 from math import comb, ceil
 import sys
+import math
 import __main__
 
 # Need to Install fastapi, pandas, joblib, scikit-learn, uvicorn
@@ -112,9 +113,9 @@ except Exception as e:
 # -----------------------------
 
 TRANSPONDER_COSTS = {
-    "16QAM": 12500,
-    "8QAM": 7500,
-    "QPSK": 4000,
+    "16QAM": 4000,
+    "8QAM": 7000,
+    "QPSK": 10000,
     "BPSK": 15000,
 }
 
@@ -141,27 +142,35 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     # Total unordered node-pair paths
     total_paths = comb(num_nodes, 2)
 
-    # Estimated number of paths in each category
-    n_16qam = round(total_paths * p_16qam)
-    n_8qam = round(total_paths * p_8qam)
-    n_qpsk = round(total_paths * p_qpsk)
-
-    # Force counts to add up exactly
-    n_bpsk = total_paths - n_16qam - n_8qam - n_qpsk
-
-    path_counts = {
-        "16QAM": n_16qam,
-        "8QAM": n_8qam,
-        "QPSK": n_qpsk,
-        "BPSK": n_bpsk,
-    }
-
     probabilities = {
         "16QAM": p_16qam,
         "8QAM": p_8qam,
         "QPSK": p_qpsk,
         "BPSK": p_bpsk,
     }
+
+    # Step 1: raw counts
+    raw_counts = {k: total_paths * probabilities[k] for k in probabilities}
+
+    # Step 2: floor everything
+    path_counts = {k: math.floor(raw_counts[k]) for k in probabilities}
+
+    # Step 3: distribute leftover paths by largest fractional remainder
+    used = sum(path_counts.values())
+    remaining = total_paths - used
+
+    remainders = sorted(
+        probabilities.keys(),
+        key=lambda k: raw_counts[k] - path_counts[k],
+        reverse=True
+    )
+
+    for i in range(remaining):
+        path_counts[remainders[i]] += 1
+
+    # Safety guard
+    for k in path_counts:
+        path_counts[k] = max(0, path_counts[k])
 
     # Fixed booster assumptions per bucket
     booster_counts = {
@@ -176,7 +185,6 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     )
 
     booster_total = sum(booster_counts.values()) * BOOSTER_COST
-
     total_cost = transponder_total + booster_total
 
     return {
