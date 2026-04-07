@@ -169,6 +169,47 @@ export function calculateMeanNNDist(nodes: Node[]): number {
     return sum / n;
 }
 
+export function getCV(values: number[]): number {
+  if (values.length === 0) return 0;
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  if (mean === 0) return 0;
+    const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+  return Math.sqrt(variance) / mean;
+}
+
+// Helper to get MST edges for CV and Topology
+export function getMSTEdgeWeights(nodes: Node[]): { weights: number[], adj: number[][] } {
+  const n = nodes.length;
+  const edges: { u: number, v: number, dist: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      edges.push({ u: i, v: j, dist: Math.sqrt(Math.pow(nodes[i].lat - nodes[j].lat, 2) + Math.pow(nodes[i].lng - nodes[j].lng, 2)) });
+    }
+  }
+  edges.sort((a, b) => a.dist - b.dist);
+
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  
+  const weights: number[] = [];
+  const adj: number[][] = Array.from({ length: n }, () => []);
+
+  for (const edge of edges) {
+    const rootU = find(edge.u);
+    const rootV = find(edge.v);
+    if (rootU !== rootV) {
+      weights.push(edge.dist);
+      adj[edge.u].push(edge.v);
+      adj[edge.v].push(edge.u);
+      parent[rootU] = rootV;
+    }
+  }
+  return { weights, adj };
+}
+
+
+// Main function to calculate all geo features from a list of nodes
+
 export function calculateGeoFeatures(nodes: Node[]): GeoFeatures {
 
   if (nodes.length < 3) throw new Error("Need at least 3 nodes")
@@ -187,18 +228,48 @@ export function calculateGeoFeatures(nodes: Node[]): GeoFeatures {
   const { numCenterNodes, numPeripheryNodes, centralityRatio } =
     estimateCentrality(nodes)
 
-  const mstTotalLength = calculateMSTLength(nodes)
-  const mstCV = 0;//calculateMST_CV(mst); // Placeholder, compute if needed
-  const meanNNDistKm = calculateMeanNNDist(nodes); // Placeholder, compute if needed
-  const centroidCV = 0; // Placeholder, compute if needed
+  // Compute MST length and CV
+  const { weights: mstWeights, adj: mstAdj } = getMSTEdgeWeights(nodes);
+  const mstTotalLength = mstWeights.reduce((a, b) => a + b, 0);
+  const mstCV = getCV(mstWeights);
+
+  const meanNNDistKm = calculateMeanNNDist(nodes);
+
+  // centroid CV
+  const avgLat = nodes.reduce((s, n) => s + n.lat, 0) / numNodes;
+  const avgLng = nodes.reduce((s, n) => s + n.lng, 0) / numNodes;
+  const distsToCentroid = nodes.map(n => Math.sqrt(Math.pow(n.lat - avgLat, 2) + Math.pow(n.lng - avgLng, 2)));
+  const centroidCV = getCV(distsToCentroid);
+
   const shapeFactor = convexArea > 0 ? Math.pow(perimeter, 2) / convexArea : 0;;
-  const nodeDensityNodesPerKm2 = 0; // Placeholder, compute if needed
-  const avgUnweightedPath = 0; // Placeholder, compute if needed
-  const degCV = 0; // Placeholder, compute if needed
-  const avgClusteringCoeff = 0; // Placeholder, compute if needed
-  const graphDiameter = 0; // Placeholder, compute if needed
-  const convexAreaBin = 0; // Placeholder, compute if needed
-  const perimeterBin = 0; // Placeholder, compute if needed
+  const nodeDensityNodesPerKm2 = convexArea > 0 ? numNodes / convexArea : 0;
+  const avgClusteringCoeff = 0; // Placeholder
+
+  const degrees = mstAdj.map(neighbors => neighbors.length);
+  const degCV = getCV(degrees);
+
+  let totalPathLength = 0;
+  let maxDist = 0;
+  for (let i = 0; i < numNodes; i++) {
+    const dists = new Array(numNodes).fill(-1);
+    const queue = [i];
+    dists[i] = 0;
+    while (queue.length > 0) {
+      const u = queue.shift()!;
+      for (const v of mstAdj[u]) {
+        if (dists[v] === -1) {
+          dists[v] = dists[u] + 1;
+          totalPathLength += dists[v];
+          maxDist = Math.max(maxDist, dists[v]);
+          queue.push(v);
+        }
+      }
+    }
+  }
+  const avgUnweightedPath = totalPathLength / (numNodes * (numNodes - 1));
+  const graphDiameter = maxDist;
+  const convexAreaBin = Math.floor(convexArea / 500);
+  const perimeterBin = Math.floor(perimeter / 100);
 
 
   return {

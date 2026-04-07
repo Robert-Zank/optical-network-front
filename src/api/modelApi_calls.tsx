@@ -76,22 +76,22 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
         num_periphery_nodes: features.numPeripheryNodes,
         convex_area: features.convexArea,
         sqrt_convex_area: features.sqrtConvexArea,
-        t_ratio: features.tRatio,
+        t_ratio: features.tRatio, 
         perimeter_sqrtarea_ratio: features.perimeterSqrtAreaRatio,
         perimeter: features.perimeter,
         edge_Density_km_per_km2: features.convexArea > 0 ? features.mstTotalLength / features.convexArea : 0,
         MST_Length_km : features.mstTotalLength,
-        MST_CV: 0, // Placeholder, compute if needed
-        Meannndist_Km: 0, // Placeholder, compute if needed
-        Centroid_CV: 0, // Placeholder, compute if needed
-        Shape_Factor: 0, // Placeholder, compute if needed
-        node_density_nodes_per_km2: 0,
-        avg_unweighted_path : 0,
-        deg_cv : 0,
-        avg_clustering_coeff : 0,
-        graph_diameter : 0,
-        convex_area_bin : 0,
-        perimeter_bin : 0,
+        MST_CV: features.mstCV,
+        Meannndist_Km: features.meanNNDistKm, 
+        Centroid_CV: features.centroidCV, 
+        Shape_Factor: features.shapeFactor, 
+        node_density_nodes_per_km2: features.nodeDensityNodesPerKm2,
+        avg_unweighted_path : features.avgUnweightedPath,
+        deg_cv : features.degCV,
+        avg_clustering_coeff : features.avgClusteringCoeff,
+        graph_diameter : features.graphDiameter,
+        convex_area_bin : features.convexAreaBin,
+        perimeter_bin : features.perimeterBin,
       }),
     });
 
