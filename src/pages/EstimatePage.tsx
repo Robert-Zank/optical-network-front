@@ -15,6 +15,7 @@ export default function EstimatePage() {
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [uploadKey, setUploadKey] = useState(0);
 
   const sampleNodes: Node[] = useMemo(
     () => [
@@ -32,13 +33,14 @@ export default function EstimatePage() {
     setPrediction(null);
   };
 
-  const handleReset = () => {
-    setNodes([]);
-    setError(null);
-    setPrediction(null);
-    setShowAssumptions(false);
-    setShowMap(false);
-  };
+const handleReset = () => {
+  setNodes([]);
+  setError(null);
+  setPrediction(null);
+  setShowAssumptions(false);
+  setShowMap(false);
+  setUploadKey((prev) => prev + 1);
+};
 
   const handleGenerateEstimate = async () => {
     if (nodes.length < 3) {
@@ -97,7 +99,7 @@ export default function EstimatePage() {
         </div>
 
         <div className="col-12 col-lg-5">
-          <TopologyUpload nodes={nodes} setNodes={setNodes} />
+          <TopologyUpload key={uploadKey} nodes={nodes} setNodes={setNodes} />
 
           <div className="bg-white border rounded-3 p-3 shadow-sm">
             <div className="fw-semibold">2. Run</div>

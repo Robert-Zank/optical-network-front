@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Node } from "../../utils/geoUtils";
 
 interface TopologyUploadProps {
@@ -43,7 +43,12 @@ function parseCsvToNodes(csvText: string): Node[] {
     const rawId = idIndex >= 0 ? cols[idIndex] : String(i);
 
     parsedNodes.push({
-      id: rawId === "" ? i : Number.isNaN(Number(rawId)) ? rawId : Number(rawId),
+      id:
+        rawId === ""
+          ? i
+          : Number.isNaN(Number(rawId))
+          ? rawId
+          : Number(rawId),
       lat,
       lng,
     });
@@ -88,6 +93,7 @@ export default function TopologyUpload({
 }: TopologyUploadProps) {
   const [fileName, setFileName] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -114,6 +120,11 @@ export default function TopologyUpload({
     setNodes([]);
     setFileName("");
     setUploadError(null);
+
+    // 🔥 THIS is the key fix
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -125,6 +136,7 @@ export default function TopologyUpload({
 
       <div className="mt-3">
         <input
+          ref={fileInputRef}
           className="form-control"
           type="file"
           accept=".csv"
