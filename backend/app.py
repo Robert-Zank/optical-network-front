@@ -119,13 +119,6 @@ TRANSPONDER_COSTS = {
     "BPSK": 15000,
 }
 
-BOOSTERS_PER_BUCKET = {
-    "16QAM": 0,
-    "8QAM": 1,
-    "QPSK": 2,
-    "BPSK": 4,
-}
-
 BOOSTER_COST = 3000
 
 
@@ -172,9 +165,24 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     for k in path_counts:
         path_counts[k] = max(0, path_counts[k])
 
-    # Fixed booster assumptions per bucket
+    BOOSTER_SPACING_KM = 80 # one booster per 80 km
+
+    def boosters_for_distance(distance_km):
+        return max(0, math.ceil(distance_km / BOOSTER_SPACING_KM) - 1)
+
+    rep_16qam = (0 + 375) / 2
+    rep_8qam = (375 + 750) / 2
+    rep_bpsk = (1500 + (lam + xi)) / 2
+
+        "16QAM": boosters_for_distance(rep_16qam),
+        "8QAM": boosters_for_distance(rep_8qam),
+        "QPSK": boosters_for_distance(rep_qpsk),
+        "BPSK": boosters_for_distance(rep_bpsk),
+    }
+
     booster_counts = {
         bucket: path_counts[bucket] * BOOSTERS_PER_BUCKET[bucket]
+        bucket: path_counts[bucket] * boosters_per_bucket[bucket]
         for bucket in path_counts
     }
 
@@ -204,7 +212,7 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
                 "QPSK": [750, 1500],
                 "BPSK": [1500, lam + xi],
             },
-            "boosters_per_bucket": BOOSTERS_PER_BUCKET,
+            "boosters_per_bucket": boosters_per_bucket,
             "booster_cost": BOOSTER_COST,
             "transponder_costs": TRANSPONDER_COSTS,
         },
