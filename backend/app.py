@@ -126,6 +126,7 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     # Create Johnson SB distribution
     dist = johnsonsb(a=gamma, b=delta, loc=xi, scale=lam)
 
+
     # Probability of paths in each modulation / distance range
     p_16qam = max(0.0, dist.cdf(375) - dist.cdf(0))
     p_8qam = max(0.0, dist.cdf(750) - dist.cdf(375))
@@ -170,10 +171,13 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     def boosters_for_distance(distance_km):
         return max(0, math.ceil(distance_km / BOOSTER_SPACING_KM) - 1)
 
+    # representative distance for each bin = midpoint of the bin
     rep_16qam = (0 + 375) / 2
     rep_8qam = (375 + 750) / 2
+    rep_qpsk = (750 + 1500) / 2
     rep_bpsk = (1500 + (lam + xi)) / 2
 
+    boosters_per_bucket = {
         "16QAM": boosters_for_distance(rep_16qam),
         "8QAM": boosters_for_distance(rep_8qam),
         "QPSK": boosters_for_distance(rep_qpsk),
@@ -181,7 +185,6 @@ def estimate_network_cost(num_nodes, gamma, delta, lam, xi):
     }
 
     booster_counts = {
-        bucket: path_counts[bucket] * BOOSTERS_PER_BUCKET[bucket]
         bucket: path_counts[bucket] * boosters_per_bucket[bucket]
         for bucket in path_counts
     }
