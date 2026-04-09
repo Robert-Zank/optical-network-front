@@ -12,7 +12,7 @@ export default function ResultsSummaryCards({
 
   return (
     <div className="row g-2 mt-3">
-      <div className="col-12 col-md-4">
+      <div className="col-12 col-md-6">
         <div className="border rounded-3 p-3 h-100">
           <div className="text-muted small">Estimated Equipment Cost</div>
           <div className="fw-bold">
@@ -21,7 +21,7 @@ export default function ResultsSummaryCards({
         </div>
       </div>
 
-      <div className="col-12 col-md-4">
+      <div className="col-12 col-md-6">
         <div className="border rounded-3 p-3 h-100">
           <div className="text-muted small">Total Paths</div>
           <div className="fw-bold">
@@ -30,12 +30,6 @@ export default function ResultsSummaryCards({
         </div>
       </div>
 
-      <div className="col-12 col-md-4">
-        <div className="border rounded-3 p-3 h-100">
-          <div className="text-muted small">KSS</div>
-          <div className="fw-bold">—</div>
-        </div>
-      </div>
     </div>
   );
 }
