@@ -1,6 +1,25 @@
 import { calculateGeoFeatures } from "../utils/geoUtils";
 import type { Node, GeoFeatures } from "../utils/geoUtils";
 
+export interface KSTestRequest {
+  nodes: Node[];
+  edges: number[];
+  predicted_params: number[];
+}
+
+export interface KSTestResponse {
+    predicted: number[];
+    trueParams: number[];
+    statistic: number;
+    predictedPValue: number;
+    truePValue: number;
+    plotData: {
+        predictedCurve: { x: number; y: number }[];
+        trueCurve: { x: number; y: number }[];
+        histogram: { bin_x: number; count: number }[];
+    };
+}
+
 export interface PredictionResponse {
   result: [number, number, number, number];
   cost_estimate: {
@@ -109,4 +128,23 @@ export async function runModel(nodes: Node[]): Promise<PredictionResponse> {
     console.error("Connection Refused. Ensure FastAPI is running on port 8000.");
     throw error; 
   }
+}
+
+export async function runKSTest(payload: KSTestRequest): Promise<KSTestResponse> {
+  const response = await fetch("http://127.0.0.1:8000/validate-network", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    console.error("KS Test Backend Error:", errorBody);
+    throw new Error(`Server Error: ${response.status}`);
+  }
+
+  return await response.json();
 }

@@ -10,6 +10,7 @@ from math import comb, ceil
 import sys
 import math
 import __main__
+from scipy import stats
 
 # Need to Install fastapi, pandas, joblib, scikit-learn, uvicorn
 # Run with: uvicorn app:app --reload
@@ -89,6 +90,7 @@ class PredictRequest(BaseModel):
 # Load ML model - This should now work without the AttributeError!
 try:
     model = joblib.load("model/JohnsonSB_Model.joblib")
+    #model = joblib.load("model/JohnsonSB_RandomForest_no_log.joblib")
     print("✅ Model loaded successfully!")
     feature_names = [
     "Num_Nodes", "Num_Center_Nodes", "Centrality_ratio",
@@ -266,3 +268,52 @@ def predict(req: PredictRequest):
         "result": result,
         "cost_estimate": cost_estimate,
     }
+
+# -----------------------------
+class NodeData(BaseModel):
+    id: int | str
+    lat: float
+    lng: float
+
+class ValidationRequest(BaseModel):
+    nodes: list[NodeData]
+    edges: list[float]
+    predicted_params: list[float]
+
+@app.post("/validate-network")
+def validate_network(req: ValidationRequest):
+    try:
+    
+        predicted_params = req.predicted_params
+        pred_gamma, pred_delta, pred_lam, pred_xi = predicted_params
+
+        # We use SciPy to fit the Johnson SB distribution directly to the real edges
+        # This gives us the "Perfect" parameters for this specific network
+        true_gamma, true_delta, true_loc, true_scale = stats.johnsonsb.fit(req.edges)
+        true_params = [true_gamma, true_delta, true_scale, true_loc]
+
+        
+        # 1. How well does the ML Prediction fit the real data?
+        stat_pred, p_val_pred = stats.kstest(
+            req.edges, 
+            'johnsonsb', 
+            args=(pred_gamma, pred_delta, pred_xi, pred_lam)
+        )
+
+        # 2. How well does the "Perfect" fit match the real data? (Baseline)
+        stat_true, p_val_true = stats.kstest(
+            req.edges,
+            'johnsonsb',
+            args=(true_gamma, true_delta, true_loc, true_scale)  # correct scipy order
+        )
+        return {
+            "predicted": predicted_params,
+            "trueParams": true_params,
+            "statistic": stat_pred,
+            "predictedPValue": p_val_pred,
+            "truePValue": p_val_true   
+        }
+
+    except Exception as e:
+        print(f"Validation Error: {e}")
+        return {"error": str(e)}

@@ -12,11 +12,15 @@
   "dependencies": {
     "@turf/turf": "^7.3.4",
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",
     "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -39,6 +39,7 @@ export default function TopNav() {
             <NavItem to="/" label="Home" />
             <NavItem to="/estimate" label="Estimator" />
             <NavItem to="/about" label="About" />
+            <NavItem to="/test-your-network" label="Test your Network" />
           </ul>
 
           <div className="d-flex gap-2">
