@@ -284,6 +284,7 @@ class ValidationRequest(BaseModel):
 def validate_network(req: ValidationRequest):
     try:
     
+        # 
         predicted_params = req.predicted_params
         pred_gamma, pred_delta, pred_lam, pred_xi = predicted_params
 

@@ -69,6 +69,124 @@ function NodeCollector({ setNodes }: { setNodes: React.Dispatch<React.SetStateAc
   return null;
 }
 
+// --- Chart Modal Component ---
+const ChartModal = ({ chartData, metrics, onClose }: { chartData: any; metrics: any; onClose: () => void }) => {
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { 
+        position: "top" as const, 
+        align: 'end' as const,
+        labels: {
+          boxWidth: 14,
+          padding: 20,
+          font: { size: 13 }
+        }
+      },
+      title: { 
+        display: true, 
+        text: `ML Model Validation: KS P-Value = ${metrics?.predictedPValue.toFixed(4)}`,
+        font: { size: 16, weight: "bold" as const }
+      },
+    },
+    scales: {
+      x: { 
+        title: { 
+          display: true, 
+          text: "Shortest Path Length (km)",
+          font: { size: 13, weight: "bold" as const }
+        },
+        stacked: false,
+      },
+      y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        title: { 
+          display: true, 
+          text: "Probability Density",
+          font: { size: 13, weight: "bold" as const }
+        },
+        min: 0,
+        ticks: { 
+          callback: (value: any) => {
+            if (typeof value === 'number') {
+              return value.toExponential(4);
+            }
+            return value;
+          },
+          maxRotation: 0
+        }
+      }
+    },
+  };
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalContent}>
+        <div style={modalHeader}>
+          <h2>Distribution Fit Analysis</h2>
+          <button onClick={onClose} style={closeBtn}>✕</button>
+        </div>
+        
+        <div style={{ height: "500px", marginBottom: "20px" }}>
+          <Line data={chartData} options={chartOptions} />
+        </div>
+
+        <div style={interpretationBox}>
+          <h3>📊 How to Interpret This Chart</h3>
+          
+          <div style={interpretSection}>
+            <h4 style={{ color: "#333", marginTop: "0px", marginBottom: "8px" }}>🔵 Blue Histogram Bars (Observed Data)</h4>
+            <p style={interpretText}>
+              These bars represent the <strong>actual distribution</strong> of shortest path lengths in your network. The height of each bar shows the <strong>density</strong> (frequency) of paths within that distance range. The bars show what your real data looks like without any assumptions.
+            </p>
+          </div>
+
+          <div style={interpretSection}>
+            <h4 style={{ color: "#c41e3a", marginTop: "0px", marginBottom: "8px" }}>🔴 Red Curve (Johnson SB Fit)</h4>
+            <p style={interpretText}>
+              This smooth curve is a <strong>mathematical model</strong> fitted to your observed data using a Johnson SB distribution. It represents the theoretical probability density function that best explains your network. If the curve matches the bars closely, your data follows a predictable pattern.
+            </p>
+          </div>
+
+          <div style={interpretSection}>
+            <h4 style={{ color: "#1976d2", marginTop: "0px", marginBottom: "8px" }}>📈 KS P-Value (Goodness of Fit)</h4>
+            <p style={interpretText}>
+              The <strong>Kolmogorov-Smirnov (KS) test</strong> measures how well the red curve matches the blue bars. The p-value tells you the confidence level:
+            </p>
+            <ul style={interpretList}>
+              <li><strong>P-Value {'>'} 0.05:</strong> ✅ <strong>Good fit!</strong> The model accurately describes your network. The differences are just random variation.</li>
+              <li><strong>P-Value {'<'} 0.05:</strong> ❌ <strong>Poor fit.</strong> The model doesn't match your data well. Your network may have unusual characteristics.</li>
+            </ul>
+          </div>
+
+          <div style={interpretSection}>
+            <h4 style={{ color: "#333", marginTop: "0px", marginBottom: "8px" }}>⚙️ Model Parameters (The Formula)</h4>
+            <p style={{ ...interpretText, fontSize: "0.9rem", marginBottom: "8px" }}>These 4 numbers describe the exact shape and position of the red curve:</p>
+            <ul style={interpretList}>
+              <li><strong>γ (gamma):</strong> First shape parameter - controls how skewed the left side is</li>
+              <li><strong>δ (delta):</strong> Second shape parameter - controls overall spread and peak height</li>
+              <li><strong>λ (lambda):</strong> Scale parameter - stretches or compresses the curve horizontally (larger = wider spread)</li>
+              <li><strong>ξ (xi):</strong> Location parameter - shifts the entire curve left or right (the minimum possible path length)</li>
+            </ul>
+          </div>
+
+          <div style={{ ...interpretSection, backgroundColor: "#f0f7ff", borderLeft: "4px solid #1976d2", padding: "12px", marginTop: "15px" }}>
+            <h4 style={{ color: "#1976d2", margin: "0 0 8px 0" }}>💡 What This Means for Your Network</h4>
+            <p style={{ ...interpretText, margin: 0 }}>
+              <strong>A good fit (p-value {'>'}  0.05)</strong> means your network has a consistent, predictable path distribution. This is valuable for network design, capacity planning, and forecasting. You can confidently use this model to predict future network behavior.
+              <br /><br />
+              <strong>A poor fit (p-value {'<'} 0.05)</strong> suggests your network has irregular characteristics—perhaps hub-and-spoke topology, unexpected bottlenecks, or uneven node placement. Consider investigating why the pattern doesn't match.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Sub-Component 1: Manual Planner ---
 const ManualPlanner = () => {
   const [nodes, setNodes] = useState<any[]>([]);
@@ -109,10 +227,10 @@ const ManualPlanner = () => {
         {prediction && (
           <div style={resultCard}>
             <h4>Predicted Params</h4>
-            <p>$\gamma$: {prediction[0].toFixed(4)}</p>
-            <p>$\delta$: {prediction[1].toFixed(4)}</p>
-            <p>$\lambda$: {prediction[2].toFixed(4)}</p>
-            <p>$\xi$: {prediction[3].toFixed(4)}</p>
+            <p>Gamma: {prediction[0].toFixed(4)}</p>
+            <p>Delta: {prediction[1].toFixed(4)}</p>
+            <p>Lambda: {prediction[2].toFixed(4)}</p>
+            <p>Xi: {prediction[3].toFixed(4)}</p>
           </div>
         )}
       </div>
@@ -126,6 +244,7 @@ const NetworkValidator = () => {
   const [edges, setEdges] = useState<number[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [showChartModal, setShowChartModal] = useState(false);
 
   const [chartData, setChartData] = useState<any>(null);
 
@@ -155,7 +274,7 @@ const NetworkValidator = () => {
   };
   
   // -----------------------------------
-  // --- THE CORE LOGIC ADDITION ---
+  // --- THE CORE LOGIC ADDITION (FIXED) ---
   // When metrics are updated, generate the chart data points
   useEffect(() => {
     if (!metrics || edges.length === 0) return;
@@ -180,68 +299,60 @@ const NetworkValidator = () => {
     };
 
     // 3. Define the domain for plotting (X-axis range)
-    // Create an array of distance points from 'minEdge' to 'maxEdge'
     const xMin = Math.floor(Math.min(...edges) / 100) * 100; // Snap to nearest 100
     const xMax = Math.ceil(Math.max(...edges) / 100) * 100;
     
-    const xLabels: number[] = [];
-    const numPoints = 100; // Number of points on the curve
-    const step = (xMax - xMin) / numPoints;
-    
-    for (let i = 0; i < numPoints; i++) {
-        xLabels.push(Math.round(xMin + (i * step)));
-    }
-
-    // 4. Calculate curve points (Y-values for the red curve)
-    const curvePoints = xLabels.map(johnsonsbPDF);
-
-    // 5. Calculate Histogram data (The blue bars)
-    // We must manually bin the raw edge data and calculate density.
-    const numBins = 30; // Matches your image bin count
+    // 4. Create bins (like histogram bars in the image)
+    const numBins = 30; // ~30 bars like in reference image
     const binSize = (xMax - xMin) / numBins;
-    const histogramDensities = new Array(xLabels.length).fill(0); // For plotting, we map this to xLabels
     
-    // Safety check: ensure binSize is positive
-    if (binSize > 0) {
-        for (const edge of edges) {
-            // Find which chart label (x point) this edge is closest to
-            // This is a simplification for plotting a 'mixed' chart, 
-            // mapping bars onto a continuous curve axis.
-            const labelIndex = Math.min(xLabels.length - 1, Math.floor((edge - xMin) / (step * (numPoints / numBins))));
-            
-            // Increment the count. For true 'density', you'd divide by (edges.length * binSize).
-            // Here, we just count for simple plotting (matches image's 'Observed' style)
-            if (labelIndex >= 0) {
-                histogramDensities[labelIndex]++;
-            }
-        }
+    // Create bin edges and labels
+    const binLabels: number[] = [];
+    const histogramData: number[] = [];
+    
+    for (let i = 0; i < numBins; i++) {
+      const binCenter = xMin + (i + 0.5) * binSize;
+      binLabels.push(Math.round(binCenter));
+      
+      // Count edges that fall in this bin
+      const binStart = xMin + i * binSize;
+      const binEnd = xMin + (i + 1) * binSize;
+      const countInBin = edges.filter(e => e >= binStart && e < binEnd).length;
+      
+      // Convert count to density: count / (total edges * bin width)
+      const density = countInBin / (edges.length * binSize);
+      histogramData.push(density);
     }
+
+    // 5. Generate smooth curve points on the same x-axis as bins
+    const curvePoints = binLabels.map(johnsonsbPDF);
 
     // 6. Final Chart.js data object
     const finalData = {
-      labels: xLabels, // Distance values (km) on X-axis
+      labels: binLabels, // Distance values (km) on X-axis
       datasets: [
         {
           type: "bar" as const, // Mixed chart type
           label: "Observed",
-          data: histogramDensities,
-          backgroundColor: "rgba(100, 149, 237, 0.4)", // Light blue like image
-          borderColor: "rgba(100, 149, 237, 1)",
-          borderWidth: 1,
+          data: histogramData,
+          backgroundColor: "rgba(100, 149, 237, 0.5)", // Light blue with good transparency
+          borderColor: "rgba(100, 149, 237, 0.7)",
+          borderWidth: 0.5,
+          borderRadius: 0,
           order: 2, // Plot this first (underneath)
-          yAxisID: "yHistogram", // We use a separate axis for the bars count
         },
         {
           type: "line" as const,
           label: "Johnson SB Fit",
           data: curvePoints,
-          borderColor: "rgba(255, 0, 0, 1)", // Bright red like image
-          backgroundColor: "rgba(255, 0, 0, 0)", // No fill
-          borderWidth: 2,
+          borderColor: "rgb(255, 0, 0)", // Bright red
+          backgroundColor: "transparent",
+          borderWidth: 3,
+          fill: false,
           pointRadius: 0, // Turn off data points for smooth curve
+          pointHoverRadius: 0,
           tension: 0.4, // Smooth the line
           order: 1, // Plot this over the histogram
-          yAxisID: "yDensity", // The true probability density scale
         },
       ],
     };
@@ -259,42 +370,12 @@ const NetworkValidator = () => {
       // Ensure we send predicted_params: [gamma, delta, lambda, xi]
       const ksRes = await runKSTest({ nodes, edges, predicted_params: modelRes.result });
       setMetrics(ksRes);
+      setShowChartModal(true);
     } catch (err) {
       alert("Validation failed.");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Define Chart Options (axis labels, legend placement, etc.)
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false, // Stretch to container
-    plugins: {
-      legend: { position: "top" as const, align: 'end' as const },
-      title: { 
-        display: true, 
-        text: `ML Model Validation: KS P-Value = ${metrics?.predictedPValue.toFixed(4)}` 
-      },
-    },
-    scales: {
-      x: { title: { display: true, text: "Shortest Path Length (km)" } },
-      yDensity: { // Axis for the continuous red curve
-          type: 'linear' as const,
-          display: true,
-          position: 'left' as const,
-          title: { display: true, text: "Probability Density" },
-          min: 0,
-          max: 0.0004, // Snaps max like image
-          ticks: { callback: (value: any) => value.toFixed(5) }
-      },
-      yHistogram: { // Axis for the light-blue bars
-          type: 'linear' as const,
-          display: false, // Hide this axis to match image style
-          position: 'right' as const,
-          min: 0,
-      }
-    },
   };
 
   return (
@@ -317,15 +398,9 @@ const NetworkValidator = () => {
           {loading ? "Validating..." : "Run KS Test"}
         </button>
         
-        {metrics && chartData && (
+        {metrics && (
           <div style={{ ...resultCard, borderLeft: `5px solid ${metrics.predictedPValue > 0.05 ? "#4CAF50" : "#ff4444"}`, padding: '10px' }}>
             
-            {/* --- ADD THE CHART CONTAINER --- */}
-            <div style={{ height: "250px", position: "relative", marginBottom: '15px' }}>
-                <Line data={chartData} options={chartOptions} />
-            </div>
-            {/* --- END CHART CONTAINER --- */}
-
             <h4>Parameter Breakdown</h4>
             <table style={{ width: "100%", fontSize: "0.8rem", borderCollapse: "collapse", marginBottom: "15px" }}>
               <thead>
@@ -336,10 +411,10 @@ const NetworkValidator = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr><td style={{ padding: "4px" }}>$\gamma$ (Shape 1)</td><td>{metrics.predicted[0].toFixed(3)}</td><td>{metrics.trueParams[0].toFixed(3)}</td></tr>
-                <tr><td style={{ padding: "4px" }}>$\delta$ (Shape 2)</td><td>{metrics.predicted[1].toFixed(3)}</td><td>{metrics.trueParams[1].toFixed(3)}</td></tr>
-                <tr><td style={{ padding: "4px" }}>$\lambda$ (Scale)</td><td>{metrics.predicted[2].toFixed(1)}</td><td>{metrics.trueParams[2].toFixed(1)}</td></tr>
-                <tr><td style={{ padding: "4px" }}>$\xi$ (Loc)</td><td>{metrics.predicted[3].toFixed(1)}</td><td>{metrics.trueParams[3].toFixed(1)}</td></tr>
+                <tr><td style={{ padding: "4px" }}>Gamma(Shape 1)</td><td>{metrics.predicted[0].toFixed(3)}</td><td>{metrics.trueParams[0].toFixed(3)}</td></tr>
+                <tr><td style={{ padding: "4px" }}>Delta (Shape 2)</td><td>{metrics.predicted[1].toFixed(3)}</td><td>{metrics.trueParams[1].toFixed(3)}</td></tr>
+                <tr><td style={{ padding: "4px" }}>Lambda (Scale)</td><td>{metrics.predicted[2].toFixed(1)}</td><td>{metrics.trueParams[2].toFixed(1)}</td></tr>
+                <tr><td style={{ padding: "4px" }}>Xi (Loc)</td><td>{metrics.predicted[3].toFixed(1)}</td><td>{metrics.trueParams[3].toFixed(1)}</td></tr>
               </tbody>
             </table>
 
@@ -347,9 +422,24 @@ const NetworkValidator = () => {
               <strong>KS Verdict: {metrics.predictedPValue > 0.05 ? "✅ Consistent" : "❌ Inconsistent"}</strong>
               <p style={{ fontSize: '0.8rem', color: '#666' }}>Max Deviation ($D$): {metrics.statistic.toFixed(4)}</p>
             </div>
+
+            <button 
+              onClick={() => setShowChartModal(true)} 
+              style={{ ...btnStyle("#1976d2"), marginTop: "15px" }}
+            >
+              📈 View Full Chart & Analysis
+            </button>
           </div>
         )}
       </div>
+
+      {showChartModal && metrics && chartData && (
+        <ChartModal 
+          chartData={chartData} 
+          metrics={metrics} 
+          onClose={() => setShowChartModal(false)} 
+        />
+      )}
     </div>
   );
 };
@@ -394,8 +484,83 @@ const btnStyle = (bg: string): React.CSSProperties => ({
   fontWeight: "bold", 
   cursor: "pointer", 
   marginTop: "10px" 
-});const statBox: React.CSSProperties = { padding: "10px", background: "#fff", border: "1px solid #ddd", borderRadius: "6px", margin: "10px 0", fontSize: "0.9rem" };
+});
+const statBox: React.CSSProperties = { padding: "10px", background: "#fff", border: "1px solid #ddd", borderRadius: "6px", margin: "10px 0", fontSize: "0.9rem" };
 const resultCard: React.CSSProperties = { marginTop: "20px", padding: "15px", background: "#fff", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", fontSize: "0.9rem" };
+
+// Modal Styles
+const modalOverlay: React.CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(0, 0, 0, 0.6)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+};
+
+const modalContent: React.CSSProperties = {
+  backgroundColor: "#fff",
+  borderRadius: "12px",
+  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
+  maxWidth: "1000px",
+  width: "90%",
+  maxHeight: "90vh",
+  overflow: "auto",
+  padding: "0",
+};
+
+const modalHeader: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "20px",
+  borderBottom: "1px solid #eee",
+  backgroundColor: "#f9f9f9",
+  position: "sticky",
+  top: 0,
+};
+
+const closeBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  fontSize: "28px",
+  cursor: "pointer",
+  color: "#666",
+  padding: "0",
+  width: "40px",
+  height: "40px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const interpretationBox: React.CSSProperties = {
+  padding: "20px",
+  backgroundColor: "#fafafa",
+};
+
+const interpretSection: React.CSSProperties = {
+  marginBottom: "16px",
+};
+
+const interpretText: React.CSSProperties = {
+  margin: "0 0 8px 0",
+  fontSize: "0.95rem",
+  lineHeight: "1.6",
+  color: "#444",
+};
+
+const interpretList: React.CSSProperties = {
+  margin: "8px 0",
+  paddingLeft: "20px",
+  fontSize: "0.9rem",
+  lineHeight: "1.7",
+  color: "#555",
+};
 
 // import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 // import { useState } from "react";
